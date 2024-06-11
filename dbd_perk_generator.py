@@ -8,31 +8,52 @@ def clear_terminal():
 
 def generate_perk_background(colour:tuple[int, int, int]) -> MatLike:
   clear_terminal()
-  size = 10
-  background = np.zeros(shape=(size, size, 4), dtype=np.uint8)
-  background = [([0] * size) for _ in range(size)]
-  origin = (size//2-1, size//2-1)
+  size = 6
+  for size in range(3, 11):
+    background = np.zeros(shape=(size, size, 4), dtype=np.uint8)
+    background = [([0] * size) for _ in range(size)]
+    if (len(background)%2==0):
+      origin = (
+        (size//2-1, size//2),
+        (size//2-1+1, size//2),
+        (size//2-1+1, size//2-1),
+        (size//2-1, size//2-1)
+        )
+    else:
+      origin = (
+        (size//2, size//2),
+        (size//2, size//2),
+        (size//2, size//2),
+        (size//2, size//2)
+        )
 
-  for i in range(0, 4):
-    if i == 0:
-      background[origin[0]][origin[1]] = 1
-      continue
-    for j in range(0, i):
-      x = -(i - 1) + (j)
-      y = (1 + j)
-      background[origin[0]+x][origin[1]+y] = 1
-    for j in range(0, i):
-      x = (1 + j)
-      y = (i - 1) - (j)
-      background[origin[0]+x][origin[1]+y] = 1
-    for j in range(0, i):
-      x = (i - 1) - (j)
-      y = -(j + 1)
-      background[origin[0]+x][origin[1]+y] = 1
-    for j in range(0, i):
-      x = -(j + 1)
-      y = -(i - 1) + (j)
-      background[origin[0]+x][origin[1]+y] = 1
+    for i in range(0, 2):
+      if i == 0:
+        background[origin[0][0]][origin[1][1]] = 1
+        background[origin[1][0]][origin[1][1]] = 1
+        background[origin[2][0]][origin[2][1]] = 1
+        background[origin[3][0]][origin[3][1]] = 1
+        continue
+      for j in range(-1, i):
+        x = -(i - 1) + (j)
+        y = (1 + j)
+        background[origin[0][0]+x][origin[0][1]+y] = 1
+      for j in range(-1, i):
+        x = (1 + j)
+        y = (i - 1) - (j)
+        background[origin[1][0]+x][origin[1][1]+y] = 1
+      for j in range(-1, i):
+        x = (i - 1) - (j)
+        y = -(j + 1)
+        background[origin[2][0]+x][origin[2][1]+y] = 1
+      for j in range(-1, i):
+        x = -(j + 1)
+        y = -(i - 1) + (j)
+        background[origin[3][0]+x][origin[3][1]+y] = 1
+
+    for row in background:
+      print(row)
+    print('\n\n\n')
 
   return
 
