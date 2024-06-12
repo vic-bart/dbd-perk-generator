@@ -1,6 +1,7 @@
 import cv2 as cv
 from cv2.typing import MatLike
 import numpy as np
+import urllib3
 
 def add_diamond(img:MatLike, origin:tuple[int, int], size:int, colour:tuple[int, int, int]) -> MatLike:
   if len(origin) != 4:
@@ -70,28 +71,112 @@ def combine_images(background:MatLike, foreground:MatLike) -> MatLike:
   # Return the composite image
   return background
 
+def get_images() -> MatLike:
+  # Get webpage data
+  URL:str = "https://deadbydaylight.fandom.com/wiki/Perks"
+  response:object = urllib3.request(method="GET", url=URL, decode_content=True)
+  data:str = response.data.decode(encoding='utf-8', errors='strict')
+  # Isolate survivor perks
+  data = remove_prefix(string=data, prefix="Survivor Perks", amount=2)
+  totalSurvivorPerks = remove_prefix(string=data, prefix=" (", amount=1)
+  totalSurvivorPerks = int(remove_suffix(string=totalSurvivorPerks, suffix=")"))
+  for i in range(totalSurvivorPerks):
+    data = remove_prefix(string=data, prefix='h>\n<th><a href="/wiki/', amount=1)
+    perkName = remove_suffix(string=data, suffix='"')
+    URL:str = f"https://deadbydaylight.fandom.com/wiki/{perkName}"
+    response:object = urllib3.request(method="GET", url=URL, decode_content=True)
+    imgData:str = response.data.decode(encoding='utf-8', errors='strict')
+    imgURL = remove_prefix(string=imgData, prefix=f'<a href="/wiki/{perkName}', amount=1)
+    imgURL = remove_prefix(string=imgURL, prefix='-src="', amount=1)
+    imgURL = remove_suffix(string=imgURL, suffix='"')
+    response:object = urllib3.request(method="GET", url=imgURL, decode_content=True)
+    array = bytearray(response.data)
+    array = np.asarray(array, dtype=np.uint8)
+    img = cv.imdecode(array, -1)
+    cv.imwrite(f"raw_survivor_perks/{i}.png", img)
+  # Get webpage data
+  URL:str = "https://deadbydaylight.fandom.com/wiki/Perks"
+  response:object = urllib3.request(method="GET", url=URL, decode_content=True)
+  data:str = response.data.decode(encoding='utf-8', errors='strict')
+  # Isolate killer perks
+  data = remove_prefix(string=data, prefix="Killer Perks", amount=2)
+  totalKillerPerks = remove_prefix(string=data, prefix=" (", amount=1)
+  totalKillerPerks = int(remove_suffix(string=totalKillerPerks, suffix=")"))
+  for i in range(totalKillerPerks):
+    data = remove_prefix(string=data, prefix='h>\n<th><a href="/wiki/', amount=1)
+    perkName = remove_suffix(string=data, suffix='"')
+    URL:str = f"https://deadbydaylight.fandom.com/wiki/{perkName}"
+    response:object = urllib3.request(method="GET", url=URL, decode_content=True)
+    imgData:str = response.data.decode(encoding='utf-8', errors='strict')
+    imgURL = remove_prefix(string=imgData, prefix=f'<a href="/wiki/{perkName}', amount=1)
+    imgURL = remove_prefix(string=imgURL, prefix='-src="', amount=1)
+    imgURL = remove_suffix(string=imgURL, suffix='"')
+    response:object = urllib3.request(method="GET", url=imgURL, decode_content=True)
+    array = bytearray(response.data)
+    array = np.asarray(array, dtype=np.uint8)
+    img = cv.imdecode(array, -1)
+    cv.imwrite(f"raw_killer_perks/{i}.png", img)
+
+def remove_prefix(string:str, prefix:str, amount:int) -> str:
+  """
+  Returns substring of a string from the prefix (excluded) to the terminal character.
+  """
+  for _ in range(amount):
+    index = string.find(prefix)
+    string = string.removeprefix(string[:index+len(prefix)])
+  return string
+
+def remove_suffix(string:str, suffix:str) -> str:
+  """
+  Returns substring of a string until the suffix (excluded).
+  """
+  index = string.find(suffix)
+  string = string.removesuffix(string[index:])
+  return string
+
 def main() -> None:
   """
   Generates a single perk image.
   """
-  foreground_filename = 'original_perks/0.webp'
-  foreground:MatLike = cv.imread(foreground_filename, cv.IMREAD_UNCHANGED)
-  background = np.zeros(shape=(256, 256, 4), dtype=np.uint8)
-  background:MatLike = add_diamond(
-    img=background,
-    origin=(len(background)//2, len(background)//2), 
-    size=len(background),
-    colour=(0, 0, 0)
-    )
-  background:MatLike = add_diamond(
-    img=background,
-    origin=(len(background)//2, len(background)//2), 
-    size=int(0.8*len(background)),
-    colour=(112, 34, 133)
-    )
-  composite = combine_images(background=background, foreground=foreground)
-  composite_filename = 'new_perks/0.png'
-  cv.imwrite(composite_filename, composite)
+  get_images()
+  for i in range(140):
+    foreground_filename = f"raw_survivor_perks/{i}.png"
+    foreground:MatLike = cv.imread(foreground_filename, cv.IMREAD_UNCHANGED)
+    background = np.zeros(shape=(256, 256, 4), dtype=np.uint8)
+    background:MatLike = add_diamond(
+      img=background,
+      origin=(len(background)//2, len(background)//2), 
+      size=len(background),
+      colour=(0, 0, 0)
+      )
+    background:MatLike = add_diamond(
+      img=background,
+      origin=(len(background)//2, len(background)//2), 
+      size=int(0.8*len(background)),
+      colour=(112, 34, 133)
+      )
+    composite = combine_images(background=background, foreground=foreground)
+    composite_filename = f"new_survivor_perks/{i}.png"
+    cv.imwrite(composite_filename, composite)
+  for i in range(121):
+    foreground_filename = f"raw_killer_perks/{i}.png"
+    foreground:MatLike = cv.imread(foreground_filename, cv.IMREAD_UNCHANGED)
+    background = np.zeros(shape=(256, 256, 4), dtype=np.uint8)
+    background:MatLike = add_diamond(
+      img=background,
+      origin=(len(background)//2, len(background)//2), 
+      size=len(background),
+      colour=(0, 0, 0)
+      )
+    background:MatLike = add_diamond(
+      img=background,
+      origin=(len(background)//2, len(background)//2), 
+      size=int(0.8*len(background)),
+      colour=(112, 34, 133)
+      )
+    composite = combine_images(background=background, foreground=foreground)
+    composite_filename = f"new_killer_perks/{i}.png"
+    cv.imwrite(composite_filename, composite)
 
 if __name__=="__main__":
   main()
